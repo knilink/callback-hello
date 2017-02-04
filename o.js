@@ -33,94 +33,37 @@ function syncCallback(f) {
   };
 }
 
-/*
-function syncPromise(f) {
-  var b = new block();
-  return function(...args) {
-    var result;
-    var error;
-    f.call(this, ...args).then(
-      res=>result = res
-    ).catch(
-      err=>error = err
-    ).done(
-      ()=>b.done()
-    );
-    b.wait();
-    if(error){throw error;}
-    return result;
-  };
-}
- */
-
-/*
-function syncPromise(f) {
-  var b = new block();
-  var proxyHandler = {
-    get: function(target, name) {
-      if(name in target || name !== 'o'){
-        if(name === 'then'){
-          return syncPromise(target[name]);
-        }
-        return target[name];
-      }
-      var error, result;
-      b.start();
-      target.then(
-        res => result = res
-      ).catch(
-        err => error = err
-      ).done(
-        () => b.done()
-      );
-      b.wait();
-      if(error){throw error;}
-      return result;
-    }
-  };
-  return function(...args) {
-    return new Proxy(f.call(this, ...args), proxyHandler);
-  };
-}
-*/
-
 function syncPromise(t) {
-  var proxyHandler = {
-    get: function(target, name) {
-      if(name !== 'o' || !('then' in target) || name in target){
-        return syncPromise(target[name]);
-      }
-      var error, result;
-      var b = new block();
-      b.start();
-      target.then(
-        res => result = res
-      ).catch(
-        err => error = err
-      ).done(
-        () => b.done()
-      );
-      b.wait();
-      if(error){throw error;}
-      return syncPromise(result);
-    }
-  };
 
-  if(typeof t === 'object')
+  if(typeof t === 'object'){
     return new Proxy(t, {
       get: function(target, name) {
         if(name==='__PROXY_TARGET__') return t;
-        return syncPromise(target[name]);
+        if(name !== 'o' || !('then' in target) || name in target){
+          return syncPromise(target[name]);
+        }
+        var error, result;
+        var b = new block();
+        b.start();
+        target.then(res => {
+          result = res;
+          b.done();
+        }).catch(err => {
+          error = err;
+          b.done();
+        });
+        b.wait();
+        if(error){throw error;}
+        return syncPromise(result);
       }
     });
+  }
 
-  if(typeof t === 'function')
+  if(typeof t === 'function'){
     return new Proxy(function(...args) {
       var _t = this.__PROXY_TARGET__ || this;
       var result = t.call(_t, ...args);
-      if(typeof result === 'object' || typeof result==='function')
-        return new Proxy(result, proxyHandler);
-      return result;
+      return syncPromise(result);
     }, {
       get: function(_, name) {
         if(name==='__PROXY_TARGET__') return t;
@@ -132,6 +75,8 @@ function syncPromise(t) {
         return syncPromise(t[name]);
       }
     });
+  }
+
   return t;
 }
 
@@ -139,38 +84,3 @@ module.exports = {
   syncCallback,
   syncPromise
 };
-/*
-var Promise = require('bluebird');
-
-function async(){
-  console.log(this);
-  return Promise.delay(1000).then(()=>'done');
-}
-
-function async_obj(){
-  this.h='a';
-  this.e = async;
-  this.l = function() {
-    console.log('ffff',this.h);
-    return {
-      l:'aaa',
-      f: async
-    };
-  };
-}
-
-bb=new async_obj();
-
-async.async = async;
-var s = syncPromise(new async_obj());
-
-
-
-function a(){
-  console.log(this);
-}
-a.b=function(){
-  console.log(this.c);
-}
-a.c='asdf';
-*/
