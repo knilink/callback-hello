@@ -9,7 +9,7 @@ npm i https://github.com/knilink/callback-hello.git
 ## Usage
 
 ### Prepare
-```
+```js
 var { syncCallback, syncPromise } = require('./o.js');
 
 function async_callback(a,b,c,rejected,cb){
@@ -23,22 +23,22 @@ function async_promise(result,rejected=false){
     },1000);
   });
 }
-
+```
 
 ### Callback
-```
+```js
 var sync_callback = syncCallback(async_callback);
 sync_callback(1,2); // -> [ 1, 2, undefined, undefined ];
 ```
 Function will run asynchronously by giving a callback function.
-```
+```js
 sync_callback(1,2,3,false,(err,result)=>{
   console.log(result);
 });
 ```
 
 ### promise
-```
+```js
 var sync_promise = syncPromise(async_promise);
 sync_promise('done').o; // -> 'done'
 
@@ -71,7 +71,7 @@ sync_obj.complex('callback').o.another_async('hello').o; // -> callback-hello
 ```
 ## Limitations
 There will be a exception for syncCallback if the async function contain default value.
-```
+```js
 syncCallback(function(a,b='b',callback){...})('a','b');
 // -> exception: callback is not a function
 ```
