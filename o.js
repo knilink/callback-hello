@@ -26,7 +26,7 @@ function syncCallback(f) {
       err ? error=err : result=res;
     };
     b.start();
-    f.call(this, ...args);
+    f.apply(this, args);
     b.wait();
     if(error) throw error;
     return result;
@@ -34,7 +34,6 @@ function syncCallback(f) {
 }
 
 function syncPromise(t) {
-
   if(typeof t === 'object'){
     return new Proxy(t, {
       get: function(target, name) {
@@ -62,12 +61,12 @@ function syncPromise(t) {
   if(typeof t === 'function'){
     return new Proxy(function(...args) {
       var _t = this.__PROXY_TARGET__ || this;
-      var result = t.call(_t, ...args);
+      var result = t.apply(_t, args.map(a=>typeof a === 'object' && a.__PROXY_TARGET__ || a));
       return syncPromise(result);
     }, {
       get: function(_, name) {
         if(name==='__PROXY_TARGET__') return t;
-        if(name==='call' || name =='apply' ){
+        if(name==='call' || name ==='apply' ){
           return function(...args) {
             return syncPromise(t[name](...args));
           };
