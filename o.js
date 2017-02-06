@@ -13,6 +13,9 @@ function block() {
   };
 }
 
+var _revoke_all = args =>
+   args.map(a=>['object','function'].includes(typeof a) && a.__PROXY_TARGET__ || a);
+
 function syncCallback(f) {
   var b = new block();
   return function(...args) {
@@ -61,14 +64,14 @@ function syncPromise(t) {
   if(typeof t === 'function'){
     return new Proxy(function(...args) {
       var _t = this.__PROXY_TARGET__ || this;
-      var result = t.apply(_t, args.map(a=>typeof a === 'object' && a.__PROXY_TARGET__ || a));
+      var result = t.apply(_t, _revoke_all(args));
       return syncPromise(result);
     }, {
       get: function(_, name) {
         if(name==='__PROXY_TARGET__') return t;
         if(name==='call' || name ==='apply' ){
           return function(...args) {
-            return syncPromise(t[name](...args));
+            return syncPromise(t[name](..._revoke_all(args)));
           };
         }
         return syncPromise(t[name]);
