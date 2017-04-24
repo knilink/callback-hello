@@ -86,7 +86,7 @@ nodegit.Reference.nameToId(repo, 'HEAD');
 ```
 The nodegit core received the proxy object causing assertion `object->InternalFieldCount() > 0' failed.
 To prevent this issue.
-```
+```js
 // wrap nodegit as well, so it can recognize and revoke the wrapped object
 syncProxy(nodegit).Reference.nameToId(repo, 'HEAD');
 // or manually revoke the object
