@@ -1,4 +1,4 @@
-var runLoopOnce = require('deasync').runLoopOnce;
+var loopWhile = require('deasync').loopWhile;
 
 function block() {
   var done = false;
@@ -6,7 +6,7 @@ function block() {
     done = false;
   };
   this.wait = function() {
-    while (!done) {runLoopOnce();}
+    loopWhile(()=>!done);
   };
   this.done = function() {
     done=true;
