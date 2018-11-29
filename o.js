@@ -91,4 +91,6 @@ function syncPromise(t) {
 module.exports = {
   syncCallback,
   syncPromise,
+  sp: syncPromise,
+  sc: syncCallback,
 };
