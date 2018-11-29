@@ -6,15 +6,14 @@ function block() {
     done = false;
   };
   this.wait = function() {
-    loopWhile(()=>!done);
+    loopWhile(() => !done);
   };
   this.done = function() {
-    done=true;
+    done = true;
   };
 }
 
-var _revoke_all = args =>
-   args.map(a=>['object', 'function'].includes(typeof a) && a.__PROXY_TARGET__ || a);
+var _revoke_all = args => args.map(a => (a && ['object', 'function'].includes(typeof a) && a.__PROXY_TARGET__) || a);
 
 function syncCallback(f) {
   var b = new block();
@@ -24,9 +23,9 @@ function syncCallback(f) {
     }
     var result;
     var error;
-    args[f.length-1] = function(err, res) {
+    args[f.length - 1] = function(err, res) {
       b.done();
-      err ? error=err : result=res;
+      err ? (error = err) : (result = res);
     };
     b.start();
     f.apply(this, args);
@@ -40,43 +39,50 @@ function syncPromise(t) {
   if (typeof t === 'object' && t != null) {
     return new Proxy(t, {
       get: function(target, name) {
-        if (name==='__PROXY_TARGET__') return t;
+        if (name === '__PROXY_TARGET__') return t;
         if (name !== 'o' || !('then' in target) || name in target) {
           return syncPromise(target[name]);
         }
         var error, result;
         var b = new block();
         b.start();
-        target.then(res => {
-          result = res;
-          b.done();
-        }).catch(err => {
-          error = err;
-          b.done();
-        });
+        target
+          .then(res => {
+            result = res;
+            b.done();
+          })
+          .catch(err => {
+            error = err;
+            b.done();
+          });
         b.wait();
-        if (error) {throw error;}
+        if (error) {
+          throw error;
+        }
         return syncPromise(result);
-      }
+      },
     });
   }
 
   if (typeof t === 'function') {
-    return new Proxy(function(...args) {
-      var _t = this && this.__PROXY_TARGET__ || this;
-      var result = t.apply(_t, _revoke_all(args));
-      return syncPromise(result);
-    }, {
-      get: function(_, name) {
-        if (name==='__PROXY_TARGET__') return t;
-        if (name==='call' || name ==='apply' ) {
-          return function(...args) {
-            return syncPromise(t[name](..._revoke_all(args)));
-          };
-        }
-        return syncPromise(t[name]);
+    return new Proxy(
+      function(...args) {
+        var _t = (this && this.__PROXY_TARGET__) || this;
+        var result = t.apply(_t, _revoke_all(args));
+        return syncPromise(result);
+      },
+      {
+        get: function(_, name) {
+          if (name === '__PROXY_TARGET__') return t;
+          if (name === 'call' || name === 'apply') {
+            return function(...args) {
+              return syncPromise(t[name](..._revoke_all(args)));
+            };
+          }
+          return syncPromise(t[name]);
+        },
       }
-    });
+    );
   }
 
   return t;
@@ -84,5 +90,5 @@ function syncPromise(t) {
 
 module.exports = {
   syncCallback,
-  syncPromise
+  syncPromise,
 };
