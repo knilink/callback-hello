@@ -40,7 +40,7 @@ function syncPromise(t) {
     return new Proxy(t, {
       get: function(target, name) {
         if (name === '__PROXY_TARGET__') return t;
-        if (name !== 'o' || !('then' in target) || name in target) {
+        if ((name !== 'o' && name !== 'oo') || !('then' in target) || name in target) {
           return syncPromise(target[name]);
         }
         var error, result;
@@ -59,7 +59,7 @@ function syncPromise(t) {
         if (error) {
           throw error;
         }
-        return syncPromise(result);
+        return name==='oo'? result : syncPromise(result);
       },
     });
   }
