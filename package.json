@@ -9,6 +9,6 @@
   "author": "knilink",
   "license": "MIT",
   "dependencies": {
-    "deasync": "^0.1.14"
+    "deasync": "^0.1.19"
   }
 }
